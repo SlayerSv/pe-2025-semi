@@ -1,0 +1,18 @@
+@startsalt signup
+
+{+
+<b><size: 20>Регистрация
+.
+<&envelope-closed> Электронная почта
+"user@example.com    "
+.
+<&key> Пароль
+"****                "
+.
+<&key> Повторите пароль
+"****                "
+.
+.
+{[<&account-login> Создать] | [<&circle-x> Отмена]}
+}
+@endsalt

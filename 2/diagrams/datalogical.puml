@@ -1,0 +1,97 @@
+@startuml
+
+' Настройки отображения
+hide circle
+skinparam linetype ortho
+
+' Сущности
+
+entity "USERS" as users {
+  *id : INT <<PK>>
+  --
+  name : VARCHAR(100)
+  phone : VARCHAR(20)
+  role : VARCHAR(20) -- Client, Barista, Admin
+  password_hash : VARCHAR(255)
+}
+
+entity "SHOPS" as shops {
+  *id : INT <<PK>>
+  --
+  address : VARCHAR(255)
+  phone : VARCHAR(20)
+}
+
+entity "PRODUCTS" as products {
+  *id : INT <<PK>>
+  --
+  name : VARCHAR(100)
+  price : DECIMAL(10,2)
+  description : TEXT
+  is_active : BOOLEAN
+  category_id : INT
+}
+
+entity "ORDERS" as orders {
+  *id : INT <<PK>>
+  --
+  created_at : TIMESTAMP
+  status : VARCHAR(20) -- New, Cooking, Ready, Done
+  total_amount : DECIMAL(10,2)
+  payment_method : VARCHAR(20)
+  --
+  user_id : INT <<FK>> -- Nullable (для гостей без приложения)
+  employee_id : INT <<FK>>
+  shop_id : INT <<FK>>
+}
+
+entity "ORDER_ITEMS" as order_items {
+  *id : INT <<PK>>
+  --
+  quantity : INT
+  price_at_moment : DECIMAL(10,2) -- Цена на момент продажи
+  --
+  order_id : INT <<FK>>
+  product_id : INT <<FK>>
+}
+
+entity "INGREDIENTS" as ingredients {
+  *id : INT <<PK>>
+  --
+  name : VARCHAR(100)
+  stock_quantity : DECIMAL(10,3)
+  unit : VARCHAR(10) -- kg, l, pcs
+  min_limit : DECIMAL(10,3) -- Для уведомлений о дефиците
+}
+
+entity "PRODUCT_RECIPES" as recipes {
+  *product_id : INT <<PK, FK>>
+  *ingredient_id : INT <<PK, FK>>
+  --
+  amount_required : DECIMAL(10,3)
+}
+
+' Связи
+
+' Один магазин имеет много заказов
+shops ||..|{ orders : "имеет"
+
+' Пользователь может сделать много заказов (но может быть и без заказов)
+users ||..o{ orders : "создает"
+
+' Сотрудник (тоже User) обрабатывает много заказов
+users ||..o{ orders : "обрабатывает (employee)"
+
+' Заказ должен содержать минимум 1 позицию
+orders ||..|{ order_items : "содержит"
+
+' Продукт может быть во многих позициях заказа
+products ||..o{ order_items : "включается в"
+
+' Продукт состоит из ингредиентов (Тех. карта)
+products ||..|{ recipes : "определяется"
+
+' Ингредиент используется во многих рецептах
+ingredients ||..o{ recipes : "используется в"
+
+@enduml

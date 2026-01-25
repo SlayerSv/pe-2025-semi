@@ -1,0 +1,39 @@
+@startuml
+left to right direction
+actor "Клиент" as Client
+actor "Бариста" as Barista
+actor "Повар" as Cook
+actor "Владелец" as Owner
+
+rectangle "Система «Сдобная Булка»" {
+  usecase "Просмотр меню" as UC1
+  usecase "Оформление заказа" as UC2
+  usecase "Оплата заказа (Онлайн/Терминал)" as UC3
+  usecase "Отслеживание статуса заказа" as UC4
+  
+  usecase "Прием/Редактирование заказа" as UC5
+  usecase "Управление стоп-листом" as UC6
+  
+  usecase "Просмотр заказов (KDS)" as UC7
+  usecase "Смена статуса (Готовится -> Готов)" as UC8
+  
+  usecase "Просмотр аналитики продаж" as UC9
+  usecase "Управление запасами" as UC10
+}
+
+Client --> UC1
+Client --> UC2
+Client --> UC3
+Client --> UC4
+
+Barista --> UC2 : (Прием по телефону/у стойки)
+Barista --> UC3
+Barista --> UC5
+Barista --> UC6
+
+Cook --> UC7
+Cook --> UC8
+
+Owner --> UC9
+Owner --> UC10
+@enduml

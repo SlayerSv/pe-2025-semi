@@ -1,0 +1,42 @@
+@startuml
+!theme plain
+node "Клиент (User Device)" as ClientNode {
+    component "Веб-браузер" as Browser {
+        [SPA (React/Vue) \nСтраницы: Портфель, Заявки] as Frontend
+    }
+}
+
+node "Серверная инфраструктура" as ServerNode {
+    
+    node "Web Server" as WebNode {
+        [Nginx / Load Balancer] as Nginx
+    }
+    
+    node "Application Server" as AppNode {
+        component "Backend API" as Backend {
+            [Order Manager]
+            [Portfolio Calculator]
+            [Auth Service]
+        }
+    }
+    
+    database "DBMS (PostgreSQL)" as DBNode {
+        [InvestPortfolio DB] as DB
+    }
+}
+
+cloud "Внешние системы" as Cloud {
+    [Market Data Provider API] as MarketData
+    note right of MarketData
+        Источник текущих
+        рыночных цен
+    end note
+}
+
+' Связи
+Frontend <..> Nginx : HTTPS
+Nginx <..> Backend : Proxy Pass / JSON
+Backend <..> DB : SQL / TCP (JDBC/ODBC)
+Backend <..> MarketData : REST API (Update Prices)
+
+@enduml

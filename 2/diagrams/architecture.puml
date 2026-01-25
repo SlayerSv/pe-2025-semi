@@ -1,0 +1,69 @@
+@startuml
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+left to right direction
+node "Клиентское устройство" {
+    [Мобильное приложение] as Mobile
+}
+
+cloud "Облако (Yandex, Cloud.ru)" {
+    [Балансировщик нагрузки] as LB
+    
+    node "Сервисы" {
+        [API Gateway] as APIGW
+        [Основные сервисы] as Core
+        [Аналитика] as Analytics
+    }
+    
+    database "PostgreSQL" as CentralDB
+}
+
+node "Кофейня" {
+    node "Локальный сервер" {
+        [API] as LocalAPI
+        [Сервис синхронизации] as Sync
+        database "Локальная БД\n(Redis/SQLite)" as LocalDB
+    }
+    
+    node "Кухня" {
+        [Кухонный экран (KDS)] as KDS
+        [Принтер чеков] as LPrinter
+    }
+    
+    node "Стойка оплаты" {
+        [POS Terminal (Бариста)] as POS
+        [Печать чеков] as RPrinter
+        [Терминал оплаты] as PayTerm
+    }
+    
+    node "Гланые холл" {
+        [Планшет для заказов] as Kiosk
+    }
+}
+
+' Connections
+Mobile --> LB : HTTPS/WSS
+LB --> APIGW
+APIGW --> Core
+Core --> CentralDB
+Core --> Analytics
+
+' Cloud to Local Sync
+Sync <..> APIGW : HTTPS (Sync Data)
+
+' Local Interactions
+POS --> LocalAPI : HTTP/WS
+Kiosk --> LocalAPI : HTTP/WS
+KDS <.. LocalAPI : WebSocket (Realtime Updates)
+LocalAPI --> LocalDB : Read/Write
+LocalAPI --> RPrinter : USB/LAN
+LocalAPI --> LPrinter : USB/LAN
+POS -right- PayTerm : Integration
+
+' Note about Offline Mode
+note right of Sync
+ Репликация данных, синхронизация при онлайн
+ для возможности работы кофейни оффлайн.
+end note
+
+@enduml

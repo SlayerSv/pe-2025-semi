@@ -1,0 +1,79 @@
+@startuml
+hide circle
+skinparam linetype ortho
+
+' Справочники
+entity "instrument_types" as type_ref {
+    *id : INT <<PK>>
+    --
+    name : VARCHAR(50) -- Акция, Облигация, Фонд
+}
+
+entity "currencies" as curr_ref {
+    *code : CHAR(3) <<PK>> -- USD, RUB, EUR
+    --
+    name : VARCHAR(50)
+}
+
+' Основные сущности
+entity "users" as users {
+    *id : BIGINT <<PK>>
+    --
+    login : VARCHAR(100)
+    password_hash : VARCHAR(255)
+    full_name : VARCHAR(200)
+    created_at : TIMESTAMP
+}
+
+entity "instruments" as instruments {
+    *id : BIGINT <<PK>>
+    --
+    *type_id : INT <<FK>>
+    ticker : VARCHAR(20) -- Например, YNDX
+    name : VARCHAR(200)
+    *currency_code : CHAR(3) <<FK>>
+    current_market_price : DECIMAL(19,4) -- Обновляется извне
+    last_update_ts : TIMESTAMP
+}
+
+' Портфель (Текущее состояние)
+entity "portfolio_positions" as portfolio {
+    *id : BIGINT <<PK>>
+    --
+    *user_id : BIGINT <<FK>>
+    *instrument_id : BIGINT <<FK>>
+    quantity : INT -- Количество (неотрицательное)
+    avg_buy_price : DECIMAL(19,4) -- Средняя цена покупки
+    updated_at : TIMESTAMP
+}
+
+' Заявки (История и активные)
+entity "orders" as orders {
+    *id : BIGINT <<PK>>
+    --
+    *user_id : BIGINT <<FK>>
+    *instrument_id : BIGINT <<FK>>
+    operation_type : ENUM('BUY', 'SELL')
+    status : ENUM('ACTIVE', 'EXECUTED', 'CANCELLED')
+    quantity : INT
+    price_per_unit : DECIMAL(19,4) -- Цена заявки
+    total_amount : DECIMAL(19,4)
+    created_at : TIMESTAMP
+    executed_at : TIMESTAMP
+}
+
+' Связи (Relationships)
+
+' Справочники к Инструментам
+type_ref ||..|{ instruments : "определяет тип"
+curr_ref ||..|{ instruments : "валюта торгов"
+
+' Пользователь и его активы
+users ||..|{ portfolio : "владеет"
+instruments ||..|{ portfolio : "содержится в"
+
+' Пользователь и его заявки
+users ||..|{ orders : "создает"
+instruments ||..|{ orders : "предмет торга"
+
+@enduml

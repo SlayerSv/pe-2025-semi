@@ -1,0 +1,15 @@
+@startsalt login
+
+{+
+<b><size:20>Войти в аккаунт
+.
+<&envelope-closed> Электронная почта
+"user@example.com   "
+.
+<&key> Пароль
+"****               "
+.
+.
+{[<&account-login> Войти] | [<&circle-x> Отмена]}
+}
+@endsalt

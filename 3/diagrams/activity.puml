@@ -1,0 +1,77 @@
+@startuml
+
+start
+
+:<b>Начало транзакции</b>;
+
+:Получить данные заявки
+(Тип, Инструмент ID, Кол-во, Цена);
+
+partition "Блокировка ресурсов" {
+    :Выполнить запрос к таблице портфеля
+    SELECT * FROM portfolio_positions
+    WHERE user_id = ... AND instrument_id = ...
+    <b>FOR UPDATE</b>;
+    note right
+        Блокирует строку до конца транзакции.
+        Другие транзакции ждут.
+    end note
+}
+
+if (Позиция существует?) then (Нет)
+    if (Тип операции == SELL?) then (Да)
+        :<b>Ошибка:</b> Нельзя продать то,
+        чего нет (Short запрещен);
+        :ROLLBACK;
+        stop
+    else (Нет (BUY))
+        :Создать новую запись в портфеле;
+        :AvgPrice = Цена сделки
+        Quantity = Кол-во сделки;
+    endif
+else (Да, позиция есть)
+    :Считать текущие Quantity (Q_old)
+    и AvgPrice (P_old);
+    
+    if (Тип операции == BUY) then (Да)
+        :<b>Расчет средневзвешенной цены:</b>
+        TotalCost = (Q_old * P_old) + (Q_new * P_new)
+        NewQuantity = Q_old + Q_new
+        NewAvgPrice = TotalCost / NewQuantity;
+        
+        :UPDATE portfolio_positions
+        SET quantity = NewQuantity,
+            avg_buy_price = NewAvgPrice;
+    else (Нет (SELL))
+        if (Q_old < Q_new?) then (Да)
+             :<b>Ошибка:</b> Недостаточно средств
+             для продажи;
+             :ROLLBACK;
+             stop
+        else (Нет)
+             :NewQuantity = Q_old - Q_new;
+             note right
+                При продаже средняя цена
+                покупки не меняется,
+                меняется только кол-во
+             end note
+             
+             if (NewQuantity == 0?) then (Да)
+                :DELETE FROM portfolio_positions;
+                note right
+                   Полное закрытие позиции
+                end note
+             else (Нет)
+                :UPDATE portfolio_positions
+                SET quantity = NewQuantity;
+             endif
+        endif
+    endif
+endif
+
+:Изменить статус заявки в orders на EXECUTED;
+
+:<b>Фиксация транзакции (COMMIT)</b>;
+
+stop
+@enduml
